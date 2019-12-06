@@ -72,12 +72,27 @@ public class ZeroFilledTopNBinaryFn implements BinaryFn<Result<TopNResultValue>,
 
     @Override
     public Result<TopNResultValue> apply(Result<TopNResultValue> arg1, Result<TopNResultValue> arg2) {
+//        if (arg1 == null) {
+//            return arg2;
+//        }
+//        if (arg2 == null) {
+//            return arg1;
+//        }
+
+        /**
+         * segment base zero-fill, we do not do it currently since we can zero-fill the result only once
+         * so instead of adding the zero-fill to segment result, we can apply it after merge so that we can reduce the times of zero-fill
+         */
         if (arg1 == null) {
-            return arg2;
+            return zeroFillSegmentResultWithoutLimit(arg2);
         }
         if (arg2 == null) {
-            return arg1;
+            return zeroFillSegmentResultWithoutLimit(arg1);
         }
+
+        // do zero-fill per-segment
+        arg1 = zeroFillSegmentResultWithoutLimit(arg1);
+        arg2 = zeroFillSegmentResultWithoutLimit(arg2);
 
         Map<Object, DimensionAndMetricValueExtractor> retVals = new LinkedHashMap<>();
 
@@ -124,22 +139,72 @@ public class ZeroFilledTopNBinaryFn implements BinaryFn<Result<TopNResultValue>,
                 threshold,
                 comparator,
                 aggregations,
-                postAggregations,
-                getConvertDimValues()
+                postAggregations
         );
+//        if (true) {
+//            bob = topNMetricSpec.getResultBuilder(
+//                    timestamp,
+//                    dimSpec,
+//                    threshold,
+//                    comparator,
+//                    aggregations,
+//                    postAggregations
+//            );
+//        } else {
+//            bob = topNMetricSpec.getResultBuilder(
+//                    timestamp,
+//                    dimSpec,
+//                    threshold,
+//                    comparator,
+//                    aggregations,
+//                    postAggregations,
+//                    convertDimValues()
+//            );
+//        }
         for (DimensionAndMetricValueExtractor extractor : retVals.values()) {
             bob.addEntry(extractor);
         }
         return bob.build();
     }
 
-    private Set<Comparable> getConvertDimValues() {
+    private Set<Comparable> convertDimValues() {
         Set<Comparable> convertedDimValues = new HashSet<>();
         ValueType type = dimSpec.getOutputType();
         for (String value : dimValues) {
             convertedDimValues.add(DimensionHandlerUtils.convertObjectToType(value, type));
         }
         return convertedDimValues;
+    }
+
+    private Result<TopNResultValue> zeroFillSegmentResultWithoutLimit(Result<TopNResultValue> result) {
+
+        // do nothing if the result is null or it's already zero-filled
+        if (result == null || result.getValue() instanceof ZeroFilledTopNResultValue) {
+            return result;
+        }
+
+        final DateTime timestamp;
+        if (gran instanceof AllGranularity) {
+            timestamp = result.getTimestamp();
+        } else {
+            timestamp = gran.bucketStart(result.getTimestamp());
+        }
+
+        TopNResultBuilder bob = topNMetricSpec.getResultBuilder(
+                timestamp,
+                dimSpec,
+                threshold,
+                comparator,
+                aggregations,
+                postAggregations,
+                convertDimValues()
+        );
+
+        for (DimensionAndMetricValueExtractor extractor : result.getValue()) {
+            bob.addEntry(extractor);
+        }
+
+        return bob.build();
     }
 
 }

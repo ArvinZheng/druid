@@ -46,7 +46,13 @@ public abstract class AbstractZeroFilledTopNMetricSpec implements TopNMetricSpec
             List<AggregatorFactory> aggFactories,
             List<PostAggregator> postAggs
     ) {
-        throw new UOE("zeroFilledTopNQuery does not support creating Result Builder without zeroFilledDimValues");
+        return this.delegate.getResultBuilder(
+                timestamp,
+                dimSpec,
+                threshold,
+                comparator,
+                aggFactories,
+                postAggs);
     }
 
     public abstract TopNResultBuilder getResultBuilder(

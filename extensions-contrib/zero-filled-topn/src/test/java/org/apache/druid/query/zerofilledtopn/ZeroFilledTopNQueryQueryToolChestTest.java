@@ -3,6 +3,7 @@ package org.apache.druid.query.zerofilledtopn;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.druid.collections.SerializablePair;
 import org.apache.druid.hll.HyperLogLogCollector;
@@ -88,7 +89,7 @@ public class ZeroFilledTopNQueryQueryToolChestTest {
                 Granularities.ALL,
                 ImmutableList.of(new CountAggregatorFactory("metric1")),
                 ImmutableList.of(new ConstantPostAggregator("post", 10)),
-                ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Sets.newHashSet("1", "2", "3"))
+                ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Lists.newArrayList("1", "2", "3"))
         );
 
         final ZeroFilledTopNQuery query2 = new ZeroFilledTopNQuery(
@@ -117,7 +118,7 @@ public class ZeroFilledTopNQueryQueryToolChestTest {
                                 )
                         )
                 ),
-                ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Sets.newHashSet("1", "2", "3"))
+                ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Lists.newArrayList("1", "2", "3"))
         );
 
         final CacheStrategy<Result<TopNResultValue>, Object, ZeroFilledTopNQuery> strategy1 = new ZeroFilledTopNQueryQueryToolChest(
@@ -166,7 +167,7 @@ public class ZeroFilledTopNQueryQueryToolChestTest {
                                 )
                         )
                 ),
-                ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Sets.newHashSet("1", "2", "3"))
+                ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Lists.newArrayList("1", "2", "3"))
         );
 
         final ZeroFilledTopNQuery query2 = new ZeroFilledTopNQuery(
@@ -198,7 +199,7 @@ public class ZeroFilledTopNQueryQueryToolChestTest {
                                 )
                         )
                 ),
-                ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Sets.newHashSet("1", "2", "3"))
+                ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Lists.newArrayList("1", "2", "3"))
         );
 
         final CacheStrategy<Result<TopNResultValue>, Object, ZeroFilledTopNQuery> strategy1 = new ZeroFilledTopNQueryQueryToolChest(
@@ -239,7 +240,7 @@ public class ZeroFilledTopNQueryQueryToolChestTest {
 
             Map<String, Object> context = new HashMap<>();
             context.put("minTopNThreshold", 500);
-            context.put(ZeroFilledTopNQuery.DIM_VALUES, Sets.newHashSet("1", "2", "3"));
+            context.put(ZeroFilledTopNQuery.DIM_VALUES, Lists.newArrayList("1", "2", "3"));
 
             ZeroFilledTopNQueryBuilder builder = new ZeroFilledTopNQueryBuilder()
                     .dataSource(QueryRunnerTestHelper.dataSource)
@@ -249,7 +250,7 @@ public class ZeroFilledTopNQueryQueryToolChestTest {
                     .intervals(QueryRunnerTestHelper.fullOnIntervalSpec)
                     .aggregators(QueryRunnerTestHelper.commonDoubleAggregators);
 
-            ZeroFilledTopNQuery query1 = builder.threshold(10).context(ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Sets.newHashSet("1", "2", "3"))).build();
+            ZeroFilledTopNQuery query1 = builder.threshold(10).context(ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Lists.newArrayList("1", "2", "3"))).build();
             MockQueryRunner mockRunner = new MockQueryRunner(runner);
             new ZeroFilledTopNQueryQueryToolChest.ThresholdAdjustingQueryRunner(mockRunner, config).run(
                     QueryPlus.wrap(query1),
@@ -336,7 +337,7 @@ public class ZeroFilledTopNQueryQueryToolChestTest {
                                         getComplexAggregatorFactoryForValueType(valueType)
                                 ),
                                 ImmutableList.of(new ConstantPostAggregator("post", 10)),
-                                ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Sets.newHashSet("1", "2", "3"))
+                                ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Lists.newArrayList("1", "2", "3"))
                         )
                 );
 
@@ -463,7 +464,7 @@ public class ZeroFilledTopNQueryQueryToolChestTest {
                                                 )
                                         )
                                 ),
-                                ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Sets.newHashSet("1", "2", "3"))
+                                ImmutableMap.of(ZeroFilledTopNQuery.DIM_VALUES, Lists.newArrayList("1", "2", "3"))
                         )
                 );
 

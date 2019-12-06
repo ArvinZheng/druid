@@ -96,7 +96,7 @@ public class ZeroFilledTopNQueryQueryToolChest extends QueryToolChest<Result<Top
             @Override
             protected Ordering<Result<TopNResultValue>> makeOrdering(Query<Result<TopNResultValue>> query) {
                 return ResultGranularTimestampComparator.create(
-                        ((ZeroFilledTopNQuery) query).getGranularity(), query.isDescending()
+                        query.getGranularity(), query.isDescending()
                 );
             }
 

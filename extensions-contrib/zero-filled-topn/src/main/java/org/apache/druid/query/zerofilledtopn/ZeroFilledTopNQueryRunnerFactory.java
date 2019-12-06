@@ -13,6 +13,7 @@ import org.apache.druid.query.QueryToolChest;
 import org.apache.druid.query.QueryWatcher;
 import org.apache.druid.query.Result;
 import org.apache.druid.query.topn.TopNQueryEngine;
+import org.apache.druid.query.topn.TopNQueryMetrics;
 import org.apache.druid.query.topn.TopNResultValue;
 import org.apache.druid.segment.Segment;
 
@@ -51,7 +52,11 @@ public class ZeroFilledTopNQueryRunnerFactory implements QueryRunnerFactory<Resu
                 }
 
                 ZeroFilledTopNQuery query = (ZeroFilledTopNQuery) input.getQuery();
-                return queryEngine.query(query.toTopNQuery(), segment.asStorageAdapter(), null);
+                TopNQueryMetrics queryMetrics = null;
+                if (input.getQueryMetrics() != null && input.getQueryMetrics() instanceof ZeroFilledTopNQueryMetrics) {
+                    queryMetrics = ((ZeroFilledTopNQueryMetrics) input.getQueryMetrics()).toTopNQueryMetrics(query);
+                }
+                return queryEngine.query(query.toTopNQuery(), segment.asStorageAdapter(), queryMetrics);
             }
         };
 

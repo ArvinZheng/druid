@@ -63,7 +63,7 @@ public class ZeroFilledTopNBinaryFnTest {
         while (i1.hasNext() && i2.hasNext()) {
             Assert.assertEquals(i1.next(), i2.next());
         }
-        //Assert.assertTrue(!i1.hasNext() && !i2.hasNext());
+        Assert.assertTrue(!i1.hasNext() && !i2.hasNext());
     }
 
     @Test
@@ -95,19 +95,21 @@ public class ZeroFilledTopNBinaryFnTest {
                 new TopNResultValue(
                         ImmutableList.<Map<String, Object>>of(
                                 ImmutableMap.of(
+                                        "testdim", "1",
                                         "rows", 2L,
-                                        "index", 3L,
-                                        "testdim", "1"
+                                        "index", 3L
+
                                 ),
                                 ImmutableMap.of(
+                                        "testdim", "2",
                                         "rows", 2L,
-                                        "index", 0L,
-                                        "testdim", "2"
+                                        "index", 0L
+
                                 ),
                                 ImmutableMap.of(
+                                        "testdim", "3",
                                         "rows", 0L,
-                                        "index", 1L,
-                                        "testdim", "3"
+                                        "index", 1L
                                 )
                         )
                 )
@@ -122,11 +124,15 @@ public class ZeroFilledTopNBinaryFnTest {
                                         "rows", 3L,
                                         "index", 5L
                                 ),
-
                                 ImmutableMap.of(
                                         "testdim", "2",
                                         "rows", 4L,
                                         "index", 4L
+                                ),
+                                ImmutableMap.of(
+                                        "testdim", "3",
+                                        "rows", 0L,
+                                        "index", 3L
                                 )
                         )
                 )
@@ -136,7 +142,7 @@ public class ZeroFilledTopNBinaryFnTest {
                 Granularities.ALL,
                 new DefaultDimensionSpec("testdim", null),
                 new ZeroFilledNumericTopNMetricSpec(new NumericTopNMetricSpec("index")),
-                2,
+                3,
                 aggregatorFactories,
                 postAggregators,
                 dimValues
@@ -208,6 +214,11 @@ public class ZeroFilledTopNBinaryFnTest {
                                         "testdim", "2",
                                         "rows", 4L,
                                         "index", 4L
+                                ),
+                                ImmutableMap.of(
+                                        "testdim", "3",
+                                        "rows", 0L,
+                                        "index", 3L
                                 )
                         )
                 )
@@ -217,7 +228,7 @@ public class ZeroFilledTopNBinaryFnTest {
                 Granularities.DAY,
                 new DefaultDimensionSpec("testdim", null),
                 new ZeroFilledNumericTopNMetricSpec(new NumericTopNMetricSpec("index")),
-                2,
+                3,
                 aggregatorFactories,
                 postAggregators,
                 dimValues
@@ -236,19 +247,19 @@ public class ZeroFilledTopNBinaryFnTest {
                 new TopNResultValue(
                         ImmutableList.<Map<String, Object>>of(
                                 ImmutableMap.of(
-                                        "rows", 1L,
-                                        "index", 2L,
-                                        "testdim", "1"
-                                ),
-                                ImmutableMap.of(
+                                        "testdim", "2",
                                         "rows", 2L,
-                                        "index", 4L,
-                                        "testdim", "2"
+                                        "index", 4L
                                 ),
                                 ImmutableMap.of(
+                                        "testdim", "1",
+                                        "rows", 1L,
+                                        "index", 2L
+                                ),
+                                ImmutableMap.of(
+                                        "testdim", "3",
                                         "rows", 0L,
-                                        "index", 2L,
-                                        "testdim", "3"
+                                        "index", 2L
                                 )
                         )
                 )
@@ -261,7 +272,7 @@ public class ZeroFilledTopNBinaryFnTest {
                 Granularities.ALL,
                 new DefaultDimensionSpec("testdim", null),
                 new ZeroFilledNumericTopNMetricSpec(new NumericTopNMetricSpec("index")),
-                2,
+                3,
                 aggregatorFactories,
                 postAggregators,
                 dimValues
@@ -273,6 +284,9 @@ public class ZeroFilledTopNBinaryFnTest {
         assertTopNMergeResult(expected.getValue(), actual.getValue());
     }
 
+    /**
+     * TODO: the pre-zero fill break the compatibility with TopN query, we sort the segment based result
+     */
     @Test
     public void testMergeByPostAgg_When_MergedMetricsAreEqual_Expect_SortedByDimValueDesc() {
         Result<TopNResultValue> result1 = new Result<TopNResultValue>(
@@ -337,15 +351,15 @@ public class ZeroFilledTopNBinaryFnTest {
                                         "addrowsindexconstant", 10.0
                                 ),
                                 ImmutableMap.of(
-                                        "testdim", "2",
-                                        "rows", 4L,
-                                        "index", 4L,
-                                        "addrowsindexconstant", 9.0
-                                ),
-                                ImmutableMap.of(
                                         "testdim", "1",
                                         "rows", 3L,
                                         "index", 5L,
+                                        "addrowsindexconstant", 9.0
+                                ),
+                                ImmutableMap.of(
+                                        "testdim", "2",
+                                        "rows", 4L,
+                                        "index", 4L,
                                         "addrowsindexconstant", 9.0
                                 )
                         )
@@ -428,6 +442,11 @@ public class ZeroFilledTopNBinaryFnTest {
                                         "testdim", "2",
                                         "rows", 4L,
                                         "index", 4L
+                                ),
+                                ImmutableMap.of(
+                                        "testdim", "3",
+                                        "rows", 0L,
+                                        "index", 3L
                                 )
                         )
                 )
@@ -437,7 +456,7 @@ public class ZeroFilledTopNBinaryFnTest {
                 Granularities.ALL,
                 new DefaultDimensionSpec("testdim", null),
                 new ZeroFilledNumericTopNMetricSpec(new NumericTopNMetricSpec("index")),
-                2,
+                3,
                 aggregatorFactories,
                 postAggregators,
                 dimValues
@@ -508,19 +527,19 @@ public class ZeroFilledTopNBinaryFnTest {
                 new TopNResultValue(
                         ImmutableList.<Map<String, Object>>of(
                                 ImmutableMap.of(
-                                        "testdim", "3",
-                                        "rows", 0,
-                                        "index", 0
+                                        "testdim", "1",
+                                        "rows", 0L,
+                                        "index", 0L
                                 ),
                                 ImmutableMap.of(
                                         "testdim", "2",
-                                        "rows", 0,
-                                        "index", 0
+                                        "rows", 0L,
+                                        "index", 0L
                                 ),
                                 ImmutableMap.of(
-                                        "testdim", "1",
-                                        "rows", 0,
-                                        "index", 0
+                                        "testdim", "3",
+                                        "rows", 0L,
+                                        "index", 0L
                                 )
                         )
                 )
@@ -584,14 +603,14 @@ public class ZeroFilledTopNBinaryFnTest {
                 new TopNResultValue(
                         ImmutableList.<Map<String, Object>>of(
                                 ImmutableMap.of(
-                                        "testdim", "3",
-                                        "rows", 0,
-                                        "index", 0
+                                        "testdim", "2",
+                                        "rows", 0L,
+                                        "index", 0L
                                 ),
                                 ImmutableMap.of(
-                                        "testdim", "2",
-                                        "rows", 0,
-                                        "index", 0
+                                        "testdim", "3",
+                                        "rows", 0L,
+                                        "index", 0L
                                 ),
                                 ImmutableMap.of(
                                         "testdim", "1",
@@ -670,9 +689,9 @@ public class ZeroFilledTopNBinaryFnTest {
                                         "index", 2L
                                 ),
                                 ImmutableMap.of(
-                                        "testdim", "3",
-                                        "rows", 0,
-                                        "index", 0
+                                        "testdim", "1",
+                                        "rows", 0L,
+                                        "index", 0L
                                 )
                         )
                 )

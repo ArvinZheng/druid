@@ -3,8 +3,10 @@ package org.apache.druid.query.zerofilledtopn;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.druid.query.DefaultQueryMetrics;
 import org.apache.druid.query.DruidMetrics;
+import org.apache.druid.query.topn.DefaultTopNQueryMetrics;
 import org.apache.druid.query.topn.TopNAlgorithm;
 import org.apache.druid.query.topn.TopNParams;
+import org.apache.druid.query.topn.TopNQueryMetrics;
 import org.apache.druid.segment.ColumnValueSelector;
 import org.apache.druid.segment.Cursor;
 
@@ -91,4 +93,12 @@ public class DefaultZeroFilledTopNQueryMetrics extends DefaultQueryMetrics<ZeroF
         // Emit nothing by default.
         return this;
     }
+
+    @Override
+    public TopNQueryMetrics toTopNQueryMetrics(ZeroFilledTopNQuery zeroFilledTopNQuery) {
+        TopNQueryMetrics topNQueryMetrics = new DefaultTopNQueryMetrics(this.jsonMapper);
+        topNQueryMetrics.query(zeroFilledTopNQuery.toTopNQuery());
+        return topNQueryMetrics;
+    }
+
 }

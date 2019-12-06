@@ -42,13 +42,13 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
                 if (null == o2) {
                     retval = 0;
                 } else {
-                    retval = 1;
+                    retval = -1;
                 }
             } else if (null == o2) {
-                retval = -1;
+                retval = 1;
             } else {
                 //noinspection unchecked
-                retval = o2.compareTo(o1);
+                retval = o1.compareTo(o2);
             }
             return retval;
         }
@@ -58,6 +58,7 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
     private final Set<Comparable> dimValues;
     private final boolean inverted;
     private final List<DimValHolder> segmentRecords;
+    private final List<AggregatorFactory> aggregatorFactories;
 
     public ZeroFilledTopNNumericResultBuilder(
             DateTime timestamp,
@@ -73,6 +74,7 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
         this.timestamp = timestamp;
         this.dimSpec = dimSpec;
         this.metricName = metricName;
+        this.aggregatorFactories = aggFactories;
         this.aggFactoryNames = ZeroFilledTopNQueryQueryToolChest.extractFactoryName(aggFactories);
 
         this.postAggs = AggregatorUtil.pruneDependentPostAgg(postAggs, this.metricName);
@@ -244,21 +246,38 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
         Map<String, Object> retVal = new LinkedHashMap<>(aggFactoryNames.length + postAggs.size() + 1);
 
         retVal.put(dimSpec.getDimension(), dimValueObj);
-        for (String metricName : aggFactoryNames) {
-            retVal.put(metricName, 0);
+        for (AggregatorFactory factory : aggregatorFactories) {
+            retVal.put(factory.getName(), getZeroByType(factory));
         }
 
         for (PostAggregator pf : postAggs) {
-            retVal.put(pf.getName(), 0);
+            // TODO: what is the real data type can be?
+            retVal.put(pf.getName(), 0d);
         }
 
         DimensionAndMetricValueExtractor dimensionAndMetricValueExtractor = new DimensionAndMetricValueExtractor(retVal);
 
         return new DimValHolder.Builder()
-                .withTopNMetricVal(0)
+                .withTopNMetricVal(dimensionAndMetricValueExtractor.getDimensionValue(metricName))
                 .withDimValue(dimValueObj)
                 .withMetricValues(dimensionAndMetricValueExtractor.getBaseObject())
                 .build();
+    }
+
+    private Object getZeroByType(AggregatorFactory factory) {
+        Object ret = 0L;
+        switch (factory.getTypeName()) {
+            case "double":
+                ret = new Double(0);
+                break;
+            case "float":
+                ret = new Float(0);
+                break;
+            case "long":
+            default:
+                ret = new Long(0);
+        }
+        return ret;
     }
 
     @Override
@@ -291,7 +310,7 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
 
         // Pull out top aggregated values
         final List<Map<String, Object>> values = Lists.transform(holderValues, DimValHolder::getMetricValues);
-        return new Result<>(timestamp, new TopNResultValue(values));
+        return new Result<>(timestamp, new ZeroFilledTopNResultValue(values));
     }
 
 }

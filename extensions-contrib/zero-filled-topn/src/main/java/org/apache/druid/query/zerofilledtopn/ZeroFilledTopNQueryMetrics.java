@@ -4,6 +4,7 @@ import org.apache.druid.guice.annotations.PublicApi;
 import org.apache.druid.query.QueryMetrics;
 import org.apache.druid.query.topn.TopNAlgorithm;
 import org.apache.druid.query.topn.TopNParams;
+import org.apache.druid.query.topn.TopNQueryMetrics;
 import org.apache.druid.segment.ColumnValueSelector;
 import org.apache.druid.segment.Cursor;
 
@@ -45,5 +46,7 @@ public interface ZeroFilledTopNQueryMetrics extends QueryMetrics<ZeroFilledTopNQ
     void startRecordingScanTime();
 
     ZeroFilledTopNQueryMetrics stopRecordingScanTime();
+
+    public TopNQueryMetrics toTopNQueryMetrics(ZeroFilledTopNQuery zeroFilledTopNQuery);
 
 }

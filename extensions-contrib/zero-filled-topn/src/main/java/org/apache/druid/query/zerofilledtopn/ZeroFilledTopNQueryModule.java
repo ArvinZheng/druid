@@ -18,7 +18,7 @@ public class ZeroFilledTopNQueryModule implements DruidModule {
 
     @Override
     public List<? extends Module> getJacksonModules() {
-        return Collections.<Module>singletonList(new SimpleModule("ZeroFilledTopNQueryModule")
+        return Collections.<Module>singletonList(new SimpleModule("zeroFilledTopNQueryModule")
                 .registerSubtypes(new NamedType(
                         ZeroFilledTopNQuery.class,
                         ZeroFilledTopNQuery.ZERO_FILLED_TOPN

@@ -29,6 +29,7 @@ import org.apache.druid.query.topn.TopNResultValue;
 import org.apache.druid.segment.VirtualColumns;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,7 +41,7 @@ import java.util.Set;
  */
 public class ZeroFilledTopNQuery extends BaseQuery<Result<TopNResultValue>> {
 
-    public static final String ZERO_FILLED_TOPN = "zeroFilledTopNQuery";
+    public static final String ZERO_FILLED_TOPN = "ZeroFilledTopN";
     public static final String DIM_VALUES = "zeroFilledDimValues";
     private final Set<String> dimValues;
 
@@ -68,12 +69,14 @@ public class ZeroFilledTopNQuery extends BaseQuery<Result<TopNResultValue>> {
     ) {
         super(dataSource, querySegmentSpec, false, context, granularity);
 
+        Preconditions.checkNotNull(context, "context must not be null for " + ZERO_FILLED_TOPN);
+
         this.virtualColumns = VirtualColumns.nullToEmpty(virtualColumns);
         this.dimensionSpec = dimensionSpec;
         this.topNMetricSpec = convertTopNMetricSpec(topNMetricSpec);
         this.threshold = threshold;
 
-        this.dimValues = extractDimensionValues(context);
+        this.dimValues = new HashSet<>(extractDimensionValues(context));
         this.dimFilter = resolveFilter(dimFilter, this.dimValues, dimensionSpec.getDimension());
         this.aggregatorSpecs = aggregatorSpecs == null ? ImmutableList.of() : aggregatorSpecs;
         this.postAggregatorSpecs = Queries.prepareAggregations(
@@ -86,11 +89,9 @@ public class ZeroFilledTopNQuery extends BaseQuery<Result<TopNResultValue>> {
 
         Preconditions.checkNotNull(dimensionSpec, "dimensionSpec can't be null");
         Preconditions.checkNotNull(topNMetricSpec, "must specify a metric");
-
         Preconditions.checkArgument(threshold != 0, "Threshold cannot be equal to 0.");
+
         topNMetricSpec.verifyPreconditions(this.aggregatorSpecs, this.postAggregatorSpecs);
-
-
     }
 
     private AbstractZeroFilledTopNMetricSpec convertTopNMetricSpec(TopNMetricSpec topNMetricSpec) {
@@ -117,8 +118,8 @@ public class ZeroFilledTopNQuery extends BaseQuery<Result<TopNResultValue>> {
         return zeroFilledTopNMetricSpec;
     }
 
-    private Set<String> extractDimensionValues(Map<String, Object> context) {
-        Set<String> ret = (Set<String>) context.get(DIM_VALUES);
+    private List<String> extractDimensionValues(Map<String, Object> context) {
+        List<String> ret = (ArrayList<String>) context.get(DIM_VALUES);
         if (ret == null || ret.isEmpty()) {
             throw new IAE("zeroFilledDimValues is required for zeroFilledTopNQuery");
         }
