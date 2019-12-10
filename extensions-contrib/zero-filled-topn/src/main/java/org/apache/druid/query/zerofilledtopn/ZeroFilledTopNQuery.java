@@ -41,7 +41,7 @@ import java.util.Set;
  */
 public class ZeroFilledTopNQuery extends BaseQuery<Result<TopNResultValue>> {
 
-    public static final String ZERO_FILLED_TOPN = "ZeroFilledTopN";
+    public static final String ZERO_FILLED_TOPN = "ZeroFilledTopNQuery";
     public static final String DIM_VALUES = "zeroFilledDimValues";
     private final Set<String> dimValues;
 
