@@ -22,7 +22,11 @@ import org.apache.druid.query.FinalizeResultsQueryRunner;
 import org.apache.druid.query.QueryPlus;
 import org.apache.druid.query.QueryRunner;
 import org.apache.druid.query.Result;
+import org.apache.druid.query.aggregation.DoubleSumAggregatorFactory;
 import org.apache.druid.query.aggregation.LongSumAggregatorFactory;
+import org.apache.druid.query.aggregation.PostAggregator;
+import org.apache.druid.query.aggregation.post.ArithmeticPostAggregator;
+import org.apache.druid.query.aggregation.post.FieldAccessPostAggregator;
 import org.apache.druid.query.topn.InvertedTopNMetricSpec;
 import org.apache.druid.query.topn.NumericTopNMetricSpec;
 import org.apache.druid.query.topn.TopNQuery;
@@ -491,6 +495,152 @@ public class ZeroFilledTopNQueryRunnerTest {
         );
         TestHelper.assertExpectedResults(expectedResults, results);
 
+    }
+
+    @Test
+    public void testZeroFilledTopN_With_AscPostAgg_Expect_ZeroFilledThree_AndPostAggIsDouble() {
+        Map<String, Object> context = new HashMap<>();
+        context.put(ZeroFilledTopNQuery.DIM_VALUES, Lists.newArrayList("11", "22", "33", "1", "2", "3"));
+
+        ZeroFilledTopNQuery query = new ZeroFilledTopNQueryBuilder()
+                .dataSource("dummy")
+                .granularity(QueryRunnerTestHelper.allGran)
+                .dimension("dim1")
+                .metric(new InvertedTopNMetricSpec(new NumericTopNMetricSpec("impressions")))
+                .threshold(5)
+                .intervals(QueryRunnerTestHelper.fullOnIntervalSpec.getIntervals())
+                .context(context)
+                .aggregators(Lists.newArrayList(new LongSumAggregatorFactory("impressions", "impressions"), new DoubleSumAggregatorFactory("clicks", "clicks")))
+                .postAggregators(Lists.newArrayList(new ArithmeticPostAggregator(
+                        "postAgg",
+                        "+",
+                        Lists.newArrayList(
+                                new FieldAccessPostAggregator("impressions", "impressions"),
+                                new FieldAccessPostAggregator("clicks", "clicks")))
+                        )
+                )
+                .build();
+
+        ZeroFilledTopNQueryRunnerFactory factory = factory();
+        Iterable<Result<TopNResultValue>> results = run(
+                factory,
+                query,
+                Lists.newArrayList(factory.createRunner(segment), factory.createRunner(segment))
+        );
+
+        List<Result<TopNResultValue>> expectedResults = Arrays.asList(
+                new Result<>(
+                        new DateTime("2019-02-01T00:00:00.000Z", DateTimeZone.UTC),
+                        new TopNResultValue(
+                                ImmutableList.of(
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "11")
+                                                .put("impressions", 0L)
+                                                .put("clicks", 0.0d)
+                                                .put("postAgg", 0.0d)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "22")
+                                                .put("impressions", 0L)
+                                                .put("clicks", 0.0d)
+                                                .put("postAgg", 0.0d)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "33")
+                                                .put("impressions", 0L)
+                                                .put("clicks", 0.0d)
+                                                .put("postAgg", 0.0d)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "1")
+                                                .put("impressions", 2L)
+                                                .put("clicks", 0.0d)
+                                                .put("postAgg", 2.0d)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "2")
+                                                .put("impressions", 4L)
+                                                .put("clicks", 0.0d)
+                                                .put("postAgg", 4.0d)
+                                                .build()
+                                )
+                        )
+                )
+        );
+        TestHelper.assertExpectedResults(expectedResults, results);
+    }
+
+    @Test
+    public void testZeroFilledTopN_With_DescPostAgg_Expect_ZeroFilledTwo_AndPostAggIsDouble() {
+        Map<String, Object> context = new HashMap<>();
+        context.put(ZeroFilledTopNQuery.DIM_VALUES, Lists.newArrayList("11", "22", "33", "1", "2", "3"));
+
+        ZeroFilledTopNQuery query = new ZeroFilledTopNQueryBuilder()
+                .dataSource("dummy")
+                .granularity(QueryRunnerTestHelper.allGran)
+                .dimension("dim1")
+                .metric(new NumericTopNMetricSpec("impressions"))
+                .threshold(5)
+                .intervals(QueryRunnerTestHelper.fullOnIntervalSpec.getIntervals())
+                .context(context)
+                .aggregators(Lists.newArrayList(new LongSumAggregatorFactory("impressions", "impressions"), new LongSumAggregatorFactory("clicks", "clicks")))
+                .postAggregators(Lists.newArrayList(new ArithmeticPostAggregator(
+                                "postAgg",
+                                "+",
+                                Lists.newArrayList(
+                                        new FieldAccessPostAggregator("impressions", "impressions"),
+                                        new FieldAccessPostAggregator("clicks", "clicks")))
+                        )
+                )
+                .build();
+
+        ZeroFilledTopNQueryRunnerFactory factory = factory();
+        Iterable<Result<TopNResultValue>> results = run(
+                factory,
+                query,
+                Lists.newArrayList(factory.createRunner(segment), factory.createRunner(segment))
+        );
+
+        List<Result<TopNResultValue>> expectedResults = Arrays.asList(
+                new Result<>(
+                        new DateTime("2019-02-01T00:00:00.000Z", DateTimeZone.UTC),
+                        new TopNResultValue(
+                                ImmutableList.of(
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "3")
+                                                .put("impressions", 6L)
+                                                .put("clicks", 0L)
+                                                .put("postAgg", 6.0d)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "2")
+                                                .put("impressions", 4L)
+                                                .put("clicks", 0L)
+                                                .put("postAgg", 4.0d)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "1")
+                                                .put("impressions", 2L)
+                                                .put("clicks", 0L)
+                                                .put("postAgg", 2.0d)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "11")
+                                                .put("impressions", 0L)
+                                                .put("clicks", 0L)
+                                                .put("postAgg", 0.0d)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "22")
+                                                .put("impressions", 0L)
+                                                .put("clicks", 0L)
+                                                .put("postAgg", 0.0d)
+                                                .build()
+                                )
+                        )
+                )
+        );
+        TestHelper.assertExpectedResults(expectedResults, results);
     }
 
 }

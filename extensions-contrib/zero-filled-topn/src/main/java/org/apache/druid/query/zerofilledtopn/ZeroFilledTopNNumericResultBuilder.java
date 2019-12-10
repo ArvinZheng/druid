@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.druid.query.Result;
+import org.apache.druid.query.aggregation.Aggregator;
 import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.query.aggregation.AggregatorUtil;
 import org.apache.druid.query.aggregation.PostAggregator;
@@ -18,6 +19,7 @@ import org.joda.time.DateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,6 +62,8 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
     private final List<DimValHolder> segmentRecords;
     private final List<AggregatorFactory> aggregatorFactories;
 
+    private final Map<String, Aggregator> nilAggregators;
+
     public ZeroFilledTopNNumericResultBuilder(
             DateTime timestamp,
             DimensionSpec dimSpec,
@@ -75,6 +79,7 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
         this.dimSpec = dimSpec;
         this.metricName = metricName;
         this.aggregatorFactories = aggFactories;
+        this.nilAggregators = initializeNilAggs(aggFactories);
         this.aggFactoryNames = ZeroFilledTopNQueryQueryToolChest.extractFactoryName(aggFactories);
 
         this.postAggs = AggregatorUtil.pruneDependentPostAgg(postAggs, this.metricName);
@@ -98,6 +103,12 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
         this.dimValues.addAll(dimValues);
         this.inverted = inverted;
         this.segmentRecords = Lists.newArrayListWithCapacity(dimValues.size());
+    }
+
+    private Map<String, Aggregator> initializeNilAggs(List<AggregatorFactory> aggFactories) {
+        Map<String, Aggregator> retMap = new HashMap<>();
+        aggFactories.forEach(aggFactory -> retMap.computeIfAbsent(aggFactory.getName(), factoryName -> aggFactory.factorize(NilColumnSelectorFactory.INSTANCE)));
+        return retMap;
     }
 
     private static final int LOOP_UNROLL_COUNT = 8;
@@ -247,12 +258,11 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
 
         retVal.put(dimSpec.getDimension(), dimValueObj);
         for (AggregatorFactory factory : aggregatorFactories) {
-            retVal.put(factory.getName(), getZeroByType(factory));
+            retVal.put(factory.getName(), nilAggregators.get(factory.getName()).get());
         }
 
         for (PostAggregator pf : postAggs) {
-            // TODO: what is the real data type can be?
-            retVal.put(pf.getName(), 0d);
+            retVal.put(pf.getName(), pf.compute(retVal));
         }
 
         DimensionAndMetricValueExtractor dimensionAndMetricValueExtractor = new DimensionAndMetricValueExtractor(retVal);
@@ -262,22 +272,6 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
                 .withDimValue(dimValueObj)
                 .withMetricValues(dimensionAndMetricValueExtractor.getBaseObject())
                 .build();
-    }
-
-    private Object getZeroByType(AggregatorFactory factory) {
-        Object ret = 0L;
-        switch (factory.getTypeName()) {
-            case "double":
-                ret = new Double(0);
-                break;
-            case "float":
-                ret = new Float(0);
-                break;
-            case "long":
-            default:
-                ret = new Long(0);
-        }
-        return ret;
     }
 
     @Override
