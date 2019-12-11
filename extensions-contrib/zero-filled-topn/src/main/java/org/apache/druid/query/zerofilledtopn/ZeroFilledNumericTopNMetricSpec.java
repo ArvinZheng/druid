@@ -3,7 +3,7 @@ package org.apache.druid.query.zerofilledtopn;
 import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.query.aggregation.PostAggregator;
 import org.apache.druid.query.dimension.DimensionSpec;
-import org.apache.druid.query.topn.TopNMetricSpec;
+import org.apache.druid.query.topn.NumericTopNMetricSpec;
 import org.apache.druid.query.topn.TopNResultBuilder;
 import org.joda.time.DateTime;
 
@@ -15,7 +15,7 @@ public class ZeroFilledNumericTopNMetricSpec extends AbstractZeroFilledTopNMetri
     // use the MAX_VALUE to avoid potential collision
     private static final byte CACHE_TYPE_ID = Byte.MAX_VALUE;
 
-    public ZeroFilledNumericTopNMetricSpec(TopNMetricSpec delegate) {
+    public ZeroFilledNumericTopNMetricSpec(NumericTopNMetricSpec delegate) {
         super(delegate);
     }
 

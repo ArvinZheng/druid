@@ -10,10 +10,10 @@ import org.apache.druid.jackson.DefaultObjectMapper;
 @LazySingleton
 public class DefaultZeroFilledTopNQueryMetricsFactory implements ZeroFilledTopNQueryMetricsFactory {
 
-    private static final DefaultZeroFilledTopNQueryMetricsFactory INSTANCE = new DefaultZeroFilledTopNQueryMetricsFactory(new DefaultObjectMapper());
+    private static final ZeroFilledTopNQueryMetricsFactory INSTANCE = new DefaultZeroFilledTopNQueryMetricsFactory(new DefaultObjectMapper());
 
     @VisibleForTesting
-    public static DefaultZeroFilledTopNQueryMetricsFactory instance()
+    public static ZeroFilledTopNQueryMetricsFactory instance()
     {
         return INSTANCE;
     }
@@ -26,7 +26,7 @@ public class DefaultZeroFilledTopNQueryMetricsFactory implements ZeroFilledTopNQ
     }
 
     @Override
-    public DefaultZeroFilledTopNQueryMetrics makeMetrics() {
+    public ZeroFilledTopNQueryMetrics makeMetrics() {
         return new DefaultZeroFilledTopNQueryMetrics(jsonMapper);
     }
 

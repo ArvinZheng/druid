@@ -117,7 +117,7 @@ public class ZeroFilledTopNQueryBuilder {
     }
 
     public ZeroFilledTopNQueryBuilder metric(String s) {
-        return metric(new ZeroFilledNumericTopNMetricSpec(new NumericTopNMetricSpec(s)));
+        return metric(new NumericTopNMetricSpec(s));
     }
 
     public ZeroFilledTopNQueryBuilder metric(TopNMetricSpec t) {

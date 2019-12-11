@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.inject.Inject;
+import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.granularity.Granularity;
 import org.apache.druid.java.util.common.guava.Sequence;
@@ -34,6 +35,9 @@ import org.apache.druid.query.dimension.DefaultDimensionSpec;
 import org.apache.druid.query.dimension.DimensionSpec;
 import org.apache.druid.query.topn.BySegmentTopNResultValue;
 import org.apache.druid.query.topn.DimensionAndMetricValueExtractor;
+import org.apache.druid.query.topn.InvertedTopNMetricSpec;
+import org.apache.druid.query.topn.NumericTopNMetricSpec;
+import org.apache.druid.query.topn.TopNMetricSpec;
 import org.apache.druid.query.topn.TopNQueryConfig;
 import org.apache.druid.query.topn.TopNQueryEngine;
 import org.apache.druid.query.topn.TopNResultValue;
@@ -81,6 +85,26 @@ public class ZeroFilledTopNQueryQueryToolChest extends QueryToolChest<Result<Top
         return aggregatorFactories.stream().map(AggregatorFactory::getName).toArray(String[]::new);
     }
 
+    protected static TopNMetricSpec checkTopNMetricSpec(TopNMetricSpec topNMetricSpec) {
+
+        TopNMetricSpec ret = null;
+
+        if (topNMetricSpec instanceof NumericTopNMetricSpec) {
+            ret = topNMetricSpec;
+        } else if (topNMetricSpec instanceof InvertedTopNMetricSpec) {
+            TopNMetricSpec delegate = ((InvertedTopNMetricSpec) topNMetricSpec).getDelegate();
+            if (delegate instanceof NumericTopNMetricSpec) {
+                ret = topNMetricSpec;
+            } else {
+                throw new IAE("zeroFilledTopNQuery currently supports only NumericTopNMetricSpec, but get %s", topNMetricSpec);
+            }
+        } else {
+            throw new IAE("zeroFilledTopNQuery currently supports only NumericTopNMetricSpec, but get %s", topNMetricSpec);
+        }
+
+        return ret;
+    }
+
     private static List<PostAggregator> prunePostAggregators(ZeroFilledTopNQuery query) {
         return AggregatorUtil.pruneDependentPostAgg(
                 query.getPostAggregatorSpecs(),
@@ -108,7 +132,7 @@ public class ZeroFilledTopNQueryQueryToolChest extends QueryToolChest<Result<Top
                 return new ZeroFilledTopNBinaryFn(
                         query.getGranularity(),
                         query.getDimensionSpec(),
-                        query.getTopNMetricSpec(),
+                        checkTopNMetricSpec(query.getTopNMetricSpec()),
                         query.getThreshold(),
                         query.getAggregatorSpecs(),
                         query.getPostAggregatorSpecs(),
@@ -120,7 +144,7 @@ public class ZeroFilledTopNQueryQueryToolChest extends QueryToolChest<Result<Top
 
     @Override
     public QueryMetrics<? super ZeroFilledTopNQuery> makeMetrics(ZeroFilledTopNQuery query) {
-        DefaultZeroFilledTopNQueryMetrics queryMetrics = queryMetricsFactory.makeMetrics();
+        ZeroFilledTopNQueryMetrics queryMetrics = queryMetricsFactory.makeMetrics();
         queryMetrics.query(query);
         return queryMetrics;
     }

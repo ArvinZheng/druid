@@ -2,6 +2,7 @@ package org.apache.druid.query.zerofilledtopn;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import org.apache.druid.java.util.common.IAE;
@@ -37,17 +38,18 @@ import java.util.Set;
 
 /**
  * A special TopN query which takes a list of values as topN dimension, and do zero-filling for the input dimension values when needed
- * NOTE: ZeroFilledTopNQuery implicitly creates an InDimFilter by the zeroFilledDimValues in context and adds it to the query filter by And connection
+ * NOTE: ZeroFilledTopNQuery implicitly creates an InDimFilter by the zeroFilledDimValues in context and adds it to the query filter by And connection if needed
  */
+@JsonTypeName("zeroFilledTopN")
 public class ZeroFilledTopNQuery extends BaseQuery<Result<TopNResultValue>> {
 
-    public static final String ZERO_FILLED_TOPN = "ZeroFilledTopNQuery";
+    public static final String ZERO_FILLED_TOPN = "zeroFilledTopN";
     public static final String DIM_VALUES = "zeroFilledDimValues";
     private final Set<String> dimValues;
 
     private final VirtualColumns virtualColumns;
     private final DimensionSpec dimensionSpec;
-    private final AbstractZeroFilledTopNMetricSpec topNMetricSpec;
+    private final TopNMetricSpec topNMetricSpec;
     private final int threshold;
     private final DimFilter dimFilter;
     private final List<AggregatorFactory> aggregatorSpecs;
@@ -73,7 +75,7 @@ public class ZeroFilledTopNQuery extends BaseQuery<Result<TopNResultValue>> {
 
         this.virtualColumns = VirtualColumns.nullToEmpty(virtualColumns);
         this.dimensionSpec = dimensionSpec;
-        this.topNMetricSpec = convertTopNMetricSpec(topNMetricSpec);
+        this.topNMetricSpec = ZeroFilledTopNQueryQueryToolChest.checkTopNMetricSpec(topNMetricSpec);
         this.threshold = threshold;
 
         this.dimValues = new HashSet<>(extractDimensionValues(context));
@@ -94,28 +96,24 @@ public class ZeroFilledTopNQuery extends BaseQuery<Result<TopNResultValue>> {
         topNMetricSpec.verifyPreconditions(this.aggregatorSpecs, this.postAggregatorSpecs);
     }
 
-    private AbstractZeroFilledTopNMetricSpec convertTopNMetricSpec(TopNMetricSpec topNMetricSpec) {
+    private TopNMetricSpec checkTopNMetricSpec(TopNMetricSpec topNMetricSpec) {
 
-        if (topNMetricSpec instanceof AbstractZeroFilledTopNMetricSpec) {
-            return (AbstractZeroFilledTopNMetricSpec) topNMetricSpec;
-        }
-
-        AbstractZeroFilledTopNMetricSpec zeroFilledTopNMetricSpec;
+        TopNMetricSpec ret = null;
 
         if (topNMetricSpec instanceof NumericTopNMetricSpec) {
-            zeroFilledTopNMetricSpec = new ZeroFilledNumericTopNMetricSpec(topNMetricSpec);
+            ret = topNMetricSpec;
         } else if (topNMetricSpec instanceof InvertedTopNMetricSpec) {
-            InvertedTopNMetricSpec invertedTopNMetricSpec = (InvertedTopNMetricSpec) topNMetricSpec;
-            if (!(invertedTopNMetricSpec.getDelegate() instanceof NumericTopNMetricSpec)) {
-                throw new IAE("zeroFilledTopNQuery currently supports only NumericTopNMetricSpec, but get %s", topNMetricSpec);
+            TopNMetricSpec delegate = ((InvertedTopNMetricSpec) topNMetricSpec).getDelegate();
+            if (delegate instanceof NumericTopNMetricSpec) {
+                ret = topNMetricSpec;
             } else {
-                zeroFilledTopNMetricSpec = new InvertedZeroFilledNumericTopNMetricSpec(invertedTopNMetricSpec.getDelegate());
+                throw new IAE("zeroFilledTopNQuery currently supports only NumericTopNMetricSpec, but get %s", topNMetricSpec);
             }
         } else {
             throw new IAE("zeroFilledTopNQuery currently supports only NumericTopNMetricSpec, but get %s", topNMetricSpec);
         }
 
-        return zeroFilledTopNMetricSpec;
+        return ret;
     }
 
     private List<String> extractDimensionValues(Map<String, Object> context) {
@@ -140,7 +138,17 @@ public class ZeroFilledTopNQuery extends BaseQuery<Result<TopNResultValue>> {
         if (dimFilter == null) {
             resolvedFilter = dimValueFilter;
         } else {
-            resolvedFilter = new AndDimFilter(dimFilter, dimValueFilter);
+            if (dimFilter instanceof InDimFilter && dimFilter.equals(dimValueFilter)) {
+                resolvedFilter = dimValueFilter;
+            } else if (dimFilter instanceof AndDimFilter) {
+                AndDimFilter convertedAndFilter = (AndDimFilter) dimFilter;
+                if (!convertedAndFilter.getFields().contains(dimValueFilter)) {
+                    convertedAndFilter.getFields().add(dimValueFilter);
+                }
+                resolvedFilter = convertedAndFilter;
+            } else {
+                resolvedFilter = new AndDimFilter(dimFilter, dimValueFilter);
+            }
         }
         return resolvedFilter;
     }
@@ -171,7 +179,7 @@ public class ZeroFilledTopNQuery extends BaseQuery<Result<TopNResultValue>> {
     }
 
     @JsonProperty("metric")
-    public AbstractZeroFilledTopNMetricSpec getTopNMetricSpec() {
+    public TopNMetricSpec getTopNMetricSpec() {
         return topNMetricSpec;
     }
 

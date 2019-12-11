@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.query.aggregation.PostAggregator;
 import org.apache.druid.query.dimension.DimensionSpec;
+import org.apache.druid.query.topn.NumericTopNMetricSpec;
 import org.apache.druid.query.topn.TopNAlgorithmSelector;
 import org.apache.druid.query.topn.TopNMetricSpec;
 import org.apache.druid.query.topn.TopNMetricSpecBuilder;
@@ -19,10 +20,10 @@ import java.util.Set;
 
 public abstract class AbstractZeroFilledTopNMetricSpec implements TopNMetricSpec {
 
-    private final TopNMetricSpec delegate;
+    private final NumericTopNMetricSpec delegate;
 
     @JsonCreator
-    public AbstractZeroFilledTopNMetricSpec(@JsonProperty("metric") TopNMetricSpec delegate) {
+    public AbstractZeroFilledTopNMetricSpec(@JsonProperty("metric") NumericTopNMetricSpec delegate) {
         this.delegate = delegate;
     }
 
@@ -31,9 +32,13 @@ public abstract class AbstractZeroFilledTopNMetricSpec implements TopNMetricSpec
         delegate.verifyPreconditions(aggregatorSpecs, postAggregatorSpecs);
     }
 
-    @JsonProperty("metric")
     public TopNMetricSpec getDelegate() {
         return delegate;
+    }
+
+    @JsonProperty("metric")
+    public String getMetric() {
+        return delegate.getMetric();
     }
 
     @Override
@@ -91,7 +96,7 @@ public abstract class AbstractZeroFilledTopNMetricSpec implements TopNMetricSpec
 
     @Override
     public String getMetricName(DimensionSpec dimSpec) {
-        return delegate.getMetricName(dimSpec);
+        return delegate.getMetric();
     }
 
     @Override

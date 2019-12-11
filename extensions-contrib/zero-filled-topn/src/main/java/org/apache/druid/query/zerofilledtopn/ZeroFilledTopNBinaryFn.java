@@ -1,6 +1,5 @@
 package org.apache.druid.query.zerofilledtopn;
 
-import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.granularity.AllGranularity;
 import org.apache.druid.java.util.common.granularity.Granularity;
 import org.apache.druid.java.util.common.guava.nary.BinaryFn;
@@ -10,7 +9,8 @@ import org.apache.druid.query.aggregation.AggregatorUtil;
 import org.apache.druid.query.aggregation.PostAggregator;
 import org.apache.druid.query.dimension.DimensionSpec;
 import org.apache.druid.query.topn.DimensionAndMetricValueExtractor;
-import org.apache.druid.query.topn.NumericTopNMetricSpec;
+import org.apache.druid.query.topn.InvertedTopNMetricSpec;
+import org.apache.druid.query.topn.TopNMetricSpec;
 import org.apache.druid.query.topn.TopNResultBuilder;
 import org.apache.druid.query.topn.TopNResultValue;
 import org.apache.druid.segment.DimensionHandlerUtils;
@@ -29,7 +29,7 @@ public class ZeroFilledTopNBinaryFn implements BinaryFn<Result<TopNResultValue>,
     private final DimensionSpec dimSpec;
     private final Granularity gran;
     private final String dimension;
-    private final AbstractZeroFilledTopNMetricSpec topNMetricSpec;
+    private final TopNMetricSpec topNMetricSpec;
     private final int threshold;
     private final List<AggregatorFactory> aggregations;
     private final List<PostAggregator> postAggregations;
@@ -39,7 +39,7 @@ public class ZeroFilledTopNBinaryFn implements BinaryFn<Result<TopNResultValue>,
     public ZeroFilledTopNBinaryFn(
             final Granularity granularity,
             final DimensionSpec dimSpec,
-            final AbstractZeroFilledTopNMetricSpec topNMetricSpec,
+            final TopNMetricSpec topNMetricSpec,
             final int threshold,
             final List<AggregatorFactory> aggregatorSpecs,
             final List<PostAggregator> postAggregatorSpecs,
@@ -47,7 +47,7 @@ public class ZeroFilledTopNBinaryFn implements BinaryFn<Result<TopNResultValue>,
     ) {
         this.dimSpec = dimSpec;
         this.gran = granularity;
-        this.topNMetricSpec = checkTopNMetricSpec(topNMetricSpec);
+        this.topNMetricSpec = ZeroFilledTopNQueryQueryToolChest.checkTopNMetricSpec(topNMetricSpec);
         this.threshold = threshold;
         this.aggregations = aggregatorSpecs;
 
@@ -61,23 +61,8 @@ public class ZeroFilledTopNBinaryFn implements BinaryFn<Result<TopNResultValue>,
         this.dimValues = dimValues;
     }
 
-    private AbstractZeroFilledTopNMetricSpec checkTopNMetricSpec(AbstractZeroFilledTopNMetricSpec topNMetricSpec) {
-
-        if (!(topNMetricSpec.getDelegate() instanceof NumericTopNMetricSpec)) {
-            throw new IAE("zeroFilledTopNQuery currently supports only NumericTopNMetricSpec, but get %s", topNMetricSpec);
-        }
-
-        return topNMetricSpec;
-    }
-
     @Override
     public Result<TopNResultValue> apply(Result<TopNResultValue> arg1, Result<TopNResultValue> arg2) {
-//        if (arg1 == null) {
-//            return arg2;
-//        }
-//        if (arg2 == null) {
-//            return arg1;
-//        }
 
         /**
          * segment base zero-fill, we do not do it currently since we can zero-fill the result only once
@@ -141,26 +126,7 @@ public class ZeroFilledTopNBinaryFn implements BinaryFn<Result<TopNResultValue>,
                 aggregations,
                 postAggregations
         );
-//        if (true) {
-//            bob = topNMetricSpec.getResultBuilder(
-//                    timestamp,
-//                    dimSpec,
-//                    threshold,
-//                    comparator,
-//                    aggregations,
-//                    postAggregations
-//            );
-//        } else {
-//            bob = topNMetricSpec.getResultBuilder(
-//                    timestamp,
-//                    dimSpec,
-//                    threshold,
-//                    comparator,
-//                    aggregations,
-//                    postAggregations,
-//                    convertDimValues()
-//            );
-//        }
+
         for (DimensionAndMetricValueExtractor extractor : retVals.values()) {
             bob.addEntry(extractor);
         }
@@ -190,14 +156,16 @@ public class ZeroFilledTopNBinaryFn implements BinaryFn<Result<TopNResultValue>,
             timestamp = gran.bucketStart(result.getTimestamp());
         }
 
-        TopNResultBuilder bob = topNMetricSpec.getResultBuilder(
+        TopNResultBuilder bob = new ZeroFilledTopNNumericResultBuilder(
                 timestamp,
                 dimSpec,
+                topNMetricSpec.getMetricName(dimSpec),
                 threshold,
                 comparator,
                 aggregations,
                 postAggregations,
-                convertDimValues()
+                convertDimValues(),
+                topNMetricSpec instanceof InvertedTopNMetricSpec
         );
 
         for (DimensionAndMetricValueExtractor extractor : result.getValue()) {

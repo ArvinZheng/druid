@@ -24,7 +24,6 @@ import org.apache.druid.query.QueryRunner;
 import org.apache.druid.query.Result;
 import org.apache.druid.query.aggregation.DoubleSumAggregatorFactory;
 import org.apache.druid.query.aggregation.LongSumAggregatorFactory;
-import org.apache.druid.query.aggregation.PostAggregator;
 import org.apache.druid.query.aggregation.post.ArithmeticPostAggregator;
 import org.apache.druid.query.aggregation.post.FieldAccessPostAggregator;
 import org.apache.druid.query.topn.InvertedTopNMetricSpec;
@@ -512,11 +511,11 @@ public class ZeroFilledTopNQueryRunnerTest {
                 .context(context)
                 .aggregators(Lists.newArrayList(new LongSumAggregatorFactory("impressions", "impressions"), new DoubleSumAggregatorFactory("clicks", "clicks")))
                 .postAggregators(Lists.newArrayList(new ArithmeticPostAggregator(
-                        "postAgg",
-                        "+",
-                        Lists.newArrayList(
-                                new FieldAccessPostAggregator("impressions", "impressions"),
-                                new FieldAccessPostAggregator("clicks", "clicks")))
+                                "postAgg",
+                                "+",
+                                Lists.newArrayList(
+                                        new FieldAccessPostAggregator("impressions", "impressions"),
+                                        new FieldAccessPostAggregator("clicks", "clicks")))
                         )
                 )
                 .build();

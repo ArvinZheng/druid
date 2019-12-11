@@ -61,7 +61,7 @@ public class ZeroFilledTopNQueryTest {
                 .context(context)
                 .build();
         String jsonQuery = "{\n"
-                + "  \"queryType\": \"ZeroFilledTopNQuery\",\n"
+                + "  \"queryType\": \"zeroFilledTopN\",\n"
                 + "  \"dataSource\": \"testing\",\n"
                 + "  \"dimension\": \"market\",\n"
                 + "  \"threshold\": 2,\n"
@@ -102,7 +102,7 @@ public class ZeroFilledTopNQueryTest {
                 .context(context)
                 .build();
         String jsonQuery = "{\n"
-                + "  \"queryType\": \"ZeroFilledTopNQuery\",\n"
+                + "  \"queryType\": \"zeroFilledTopN\",\n"
                 + "  \"dataSource\": \"testing\",\n"
                 + "  \"dimension\": \"market\",\n"
                 + "  \"threshold\": 2,\n"
@@ -122,9 +122,13 @@ public class ZeroFilledTopNQueryTest {
                 + "   }"
                 + "}";
         ZeroFilledTopNQuery actualQuery = jsonMapper.readValue(
-                jsonQuery,
+                jsonMapper.writeValueAsString(jsonMapper.readValue(
+                        jsonQuery,
+                        ZeroFilledTopNQuery.class
+                )),
                 ZeroFilledTopNQuery.class
         );
+
         Assert.assertEquals(expectedQuery.toString(), actualQuery.toString());
     }
 

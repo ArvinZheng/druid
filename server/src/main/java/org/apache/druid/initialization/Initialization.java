@@ -187,6 +187,26 @@ public class Initialization
       }
     }
 
+    public static void main(String[] args) {
+      try {
+        final URLClassLoader loader = getClassLoaderForExtension(
+                new File("/Users/azheng/git/arvin.zheng/incubator-druid/extensions-contrib/zero-filled-topn/target/zero-filled-topn"),
+                false
+        );
+        ServiceLoader.load(DruidModule.class, loader).forEach(impl -> {
+          if(!impl.getJacksonModules().isEmpty()){
+            for(com.fasterxml.jackson.databind.Module m : impl.getJacksonModules()){
+              System.out.println(m.getModuleName());
+              System.out.println(m.getTypeId());
+              System.out.println(m.version());
+            }
+          }
+        });
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+
     private void tryAdd(T serviceImpl, String extensionType)
     {
       final String serviceImplName = serviceImpl.getClass().getCanonicalName();
