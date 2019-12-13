@@ -443,6 +443,61 @@ public class ZeroFilledTopNQueryRunnerTest {
     }
 
     @Test
+    public void test() {
+        Map<String, Object> context = new HashMap<>();
+        context.put(ZeroFilledTopNQuery.DIM_VALUES, Lists.newArrayList("11", "22", "33", "1", "2", "3"));
+
+        ZeroFilledTopNQuery query = new ZeroFilledTopNQueryBuilder()
+                .dataSource("dummy")
+                .granularity(QueryRunnerTestHelper.allGran)
+                .dimension("dim1")
+                .metric(new InvertedTopNMetricSpec(new NumericTopNMetricSpec("impressions")))
+                .threshold(5)
+                .intervals("2019-12-01T00:00:00.000Z/2019-12-01T01:00:00.000Z")
+                .context(context)
+                .aggregators(Lists.newArrayList(new LongSumAggregatorFactory("impressions", "impressions")))
+                .build();
+
+        ZeroFilledTopNQueryRunnerFactory factory = factory();
+        Iterable<Result<TopNResultValue>> results = run(
+                factory,
+                query,
+                Lists.newArrayList(factory.createRunner(segment), factory.createRunner(segment))
+        );
+
+        List<Result<TopNResultValue>> expectedResults = Arrays.asList(
+                new Result<>(
+                        new DateTime("2019-12-01T00:00:00.000Z", DateTimeZone.UTC),
+                        new TopNResultValue(
+                                ImmutableList.of(
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "11")
+                                                .put("impressions", 0L)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "22")
+                                                .put("impressions", 0L)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "33")
+                                                .put("impressions", 0L)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "1")
+                                                .put("impressions", 2L)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "2")
+                                                .put("impressions", 4L)
+                                                .build()
+                                )
+                        )
+                )
+        );
+        TestHelper.assertExpectedResults(expectedResults, results);
+    }
+
+    @Test
     public void testTopN_With_DescImp_Expect_NormalTopNResult() {
 
         TopNQuery query = new TopNQueryBuilder()

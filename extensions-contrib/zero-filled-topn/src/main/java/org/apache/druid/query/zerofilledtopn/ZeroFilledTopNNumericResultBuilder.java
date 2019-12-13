@@ -131,7 +131,7 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
         if (shouldAdd(topNMetricVal)) {
             DimValHolder dimValHolder = new DimValHolder.Builder()
                     .withTopNMetricVal(topNMetricVal)
-                    .withDimValue(dimValueObj)
+                    .withDimValue(dimValueObj, dimSpec.getOutputType())
                     .withDimValIndex(dimValIndex)
                     .withMetricValues(metricValues)
                     .build();
@@ -208,7 +208,7 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
         if (shouldAdd(dimValue)) {
             final DimValHolder valHolder = new DimValHolder.Builder()
                     .withTopNMetricVal(dimValue)
-                    .withDimValue((Comparable) dimensionAndMetricValueExtractor.getDimensionValue(dimSpec.getOutputName()))
+                    .withDimValue((Comparable) dimensionAndMetricValueExtractor.getDimensionValue(dimSpec.getOutputName()), dimSpec.getOutputType())
                     .withMetricValues(dimensionAndMetricValueExtractor.getBaseObject())
                     .build();
             pQueue.add(valHolder);
@@ -269,7 +269,7 @@ public class ZeroFilledTopNNumericResultBuilder implements TopNResultBuilder {
 
         return new DimValHolder.Builder()
                 .withTopNMetricVal(dimensionAndMetricValueExtractor.getDimensionValue(metricName))
-                .withDimValue(dimValueObj)
+                .withDimValue(dimValueObj, dimSpec.getOutputType())
                 .withMetricValues(dimensionAndMetricValueExtractor.getBaseObject())
                 .build();
     }
