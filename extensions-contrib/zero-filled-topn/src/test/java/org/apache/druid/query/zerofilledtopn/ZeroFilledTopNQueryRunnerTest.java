@@ -443,7 +443,7 @@ public class ZeroFilledTopNQueryRunnerTest {
     }
 
     @Test
-    public void test() {
+    public void testZeroFilledTopN_With_NoDataReturnFromSegment_Expect_ZeroFilledAll() {
         Map<String, Object> context = new HashMap<>();
         context.put(ZeroFilledTopNQuery.DIM_VALUES, Lists.newArrayList("11", "22", "33", "1", "2", "3"));
 
@@ -471,7 +471,15 @@ public class ZeroFilledTopNQueryRunnerTest {
                         new TopNResultValue(
                                 ImmutableList.of(
                                         ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "1")
+                                                .put("impressions", 0L)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
                                                 .put("dim1", "11")
+                                                .put("impressions", 0L)
+                                                .build(),
+                                        ImmutableMap.<String, Object>builder()
+                                                .put("dim1", "2")
                                                 .put("impressions", 0L)
                                                 .build(),
                                         ImmutableMap.<String, Object>builder()
@@ -479,16 +487,8 @@ public class ZeroFilledTopNQueryRunnerTest {
                                                 .put("impressions", 0L)
                                                 .build(),
                                         ImmutableMap.<String, Object>builder()
-                                                .put("dim1", "33")
+                                                .put("dim1", "3")
                                                 .put("impressions", 0L)
-                                                .build(),
-                                        ImmutableMap.<String, Object>builder()
-                                                .put("dim1", "1")
-                                                .put("impressions", 2L)
-                                                .build(),
-                                        ImmutableMap.<String, Object>builder()
-                                                .put("dim1", "2")
-                                                .put("impressions", 4L)
                                                 .build()
                                 )
                         )
